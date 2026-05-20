@@ -5,7 +5,7 @@ module.exports = {
             2,
             'never',
             [
-                'sentente-case',
+                'sentence-case',
                 'start-case',
                 'pascal-case',
                 'upper-case',
