@@ -1,0 +1,118 @@
+services:
+
+  postgres:
+
+    image: postgres:17
+
+    restart: unless-stopped
+
+    env_file:
+
+      - ../.env
+
+    volumes:
+
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+
+      test:
+
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER}"
+        ]
+
+      interval: 30s
+
+      timeout: 5s
+
+      retries: 5
+
+    security_opt:
+
+      - no-new-privileges:true
+
+    networks:
+
+      - platform
+
+
+  api:
+
+    build:
+
+      context: ../../
+
+      dockerfile: infrastructure/docker/api/Dockerfile
+
+    restart: unless-stopped
+
+    env_file:
+
+      - ../.env
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+    read_only: true
+
+    tmpfs:
+
+      - /tmp
+
+    security_opt:
+
+      - no-new-privileges:true
+
+    ports:
+
+      - "8000:8000"
+
+    networks:
+
+      - platform
+
+
+  web:
+
+    build:
+
+      context: ../../
+
+      dockerfile: infrastructure/docker/web/Dockerfile
+
+    restart: unless-stopped
+
+    depends_on:
+
+      api:
+
+        condition: service_started
+
+    read_only: true
+
+    security_opt:
+
+      - no-new-privileges:true
+
+    ports:
+
+      - "5173:5173"
+
+    networks:
+
+      - platform
+
+
+volumes:
+
+  postgres_data:
+
+
+networks:
+
+  platform:

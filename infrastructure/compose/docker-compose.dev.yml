@@ -1,0 +1,122 @@
+services:
+
+  postgres:
+
+    image: postgres:17
+
+    container_name: postgres
+
+    restart: unless-stopped
+
+    environment:
+
+      POSTGRES_DB: ${POSTGRES_DB}
+
+      POSTGRES_USER: ${POSTGRES_USER}
+
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+
+      - "5432:5432"
+
+    volumes:
+
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+
+      test:
+
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER}"
+        ]
+
+      interval: 10s
+
+      timeout: 5s
+
+      retries: 5
+
+    networks:
+
+      - platform
+
+
+  api:
+
+    build:
+
+      context: ../../
+
+      dockerfile: infrastructure/docker/api/Dockerfile
+
+    container_name: api
+
+    restart: unless-stopped
+
+    env_file:
+
+      - ../.env
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+    ports:
+
+      - "8000:8000"
+
+    volumes:
+
+      - ../../apps/api:/app
+
+    networks:
+
+      - platform
+
+
+  web:
+
+    build:
+
+      context: ../../
+
+      dockerfile: infrastructure/docker/web/Dockerfile
+
+    container_name: web
+
+    restart: unless-stopped
+
+    depends_on:
+
+      api:
+
+        condition: service_started
+
+    ports:
+
+      - "5173:5173"
+
+    volumes:
+
+      - ../../:/workspace
+
+      - /workspace/node_modules
+
+    networks:
+
+      - platform
+
+
+volumes:
+
+  postgres_data:
+
+
+networks:
+
+  platform:
